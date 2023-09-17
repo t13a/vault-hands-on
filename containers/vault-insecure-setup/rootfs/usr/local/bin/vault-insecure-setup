@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+function cmd_main() {
+    trap 'exit' SIGINT SIGTERM
+
+    while sleep "${VAULT_INSECURE_SETUP_PERIOD_SECONDS}" & wait $!
+    do
+        local needs_init=no
+        local needs_unseal=no
+
+        if seal_status="$(vault_seal_status)"
+        then
+            if ! is_initialized "${seal_status}" || ! [ -f "${VAULT_INSECURE_SETUP_INIT_JSON}" ]
+            then
+                needs_init=yes
+                needs_unseal=yes
+            elif is_sealed "${seal_status}"
+            then
+                needs_unseal=yes
+            fi
+        else
+            continue
+        fi
+
+        if [ "${needs_init}" == yes ]
+        then
+            echo 'Initializing...' >&2
+            vault_init "${VAULT_INSECURE_SETUP_INIT_JSON}" || continue
+        fi
+
+        if [ "${needs_unseal}" == yes ]
+        then
+            echo 'Unsealing...' >&2
+            keys "${VAULT_INSECURE_SETUP_INIT_JSON}" | while read key
+            do
+                vault_unseal "${key}" || continue
+            done
+        fi
+    done
+}
+
+function cmd_root_token() {
+    jq -r '.root_token' "${VAULT_INSECURE_SETUP_INIT_JSON}"
+}
+
+function is_initialized() {
+    jq -n -e --argjson seal_status "${1}" '$seal_status | .initialized' > /dev/null
+}
+
+function is_sealed() {
+    jq -n -e --argjson seal_status "${1}" '$seal_status | .sealed' > /dev/null
+}
+
+function keys() {
+    jq -r '.keys[]' "${1}"
+}
+
+function vault_init() {
+    curl -f -sS -X POST "${VAULT_ADDR}/v1/sys/init" -d "$(jq -n \
+        --argjson secret_shares "${VAULT_INSECURE_SETUP_SECRET_SHARES}" \
+        --argjson secret_threshold "${VAULT_INSECURE_SETUP_SECRET_THRESHOLD}" \
+        '$ARGS.named'
+    )" -o "${1}"
+}
+
+function vault_seal_status() {
+    curl -f -sS -X GET "${VAULT_ADDR}/v1/sys/seal-status"
+}
+
+function vault_unseal() {
+    curl -f -sS -X POST "${VAULT_ADDR}/v1/sys/unseal" -d "$(jq -n \
+        --arg key "${1}" \
+        '$ARGS.named' \
+    )"
+}
+
+"cmd_${1//-/_}"

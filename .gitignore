@@ -1,0 +1,7 @@
+.kube
+.my-root-ca
+.terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.*

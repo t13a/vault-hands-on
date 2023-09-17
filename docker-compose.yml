@@ -1,0 +1,37 @@
+services:
+  vault:
+    cap_add:
+      - IPC_LOCK
+    command: server -config /config.hcl
+    healthcheck:
+      test: wget --spider -Y off http://127.0.0.1:8200/v1/sys/health?standbyok=true
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    image: hashicorp/vault
+    ports:
+      - 8200:8200
+    restart: always
+    volumes:
+      - ./config.hcl:/config.hcl:ro
+      - vault_file:/vault/file
+      - vault_logs:/vault/logs
+  vault-insecure-setup:
+    build:
+      context: ../../containers/vault-insecure-setup
+    depends_on:
+      - vault
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_INSECURE_SETUP_INIT_JSON=/vault-insecure-setup/init.json
+      - VAULT_INSECURE_SETUP_PERIOD_SECONDS=10
+      - VAULT_INSECURE_SETUP_SECRET_SHARES=5
+      - VAULT_INSECURE_SETUP_SECRET_THRESHOLD=3
+    restart: always
+    volumes:
+      - vault_insecure_setup_data:/vault-insecure-setup
+volumes:
+  vault_file:
+  vault_insecure_setup_data:
+  vault_logs:
