@@ -12,6 +12,8 @@ kind/down: \
 export KIND_CLUSTER_NAME := vault-hands-on
 export KUBECONFIG := $(PWD)/.kube/config
 
+kind_container_ip_address = $(shell docker network inspect kind \
+	| jq -re --arg name '$(KIND_CLUSTER_NAME)-control-plane' '.[0].Containers[]|select(.Name==$$name).IPv4Address|split("/")[0]')
 kind_is_created = kind get clusters | grep -q '^$(KIND_CLUSTER_NAME)$$'
 kind_is_connected_to_vault = docker network inspect kind \
 	| jq -e --arg name '$(vault_container_name)' '.[0].Containers[]|select(.Name==$$name)' > /dev/null
@@ -41,6 +43,10 @@ kind/create-vault-service:
 kind/delete-vault-service:
 	kubectl delete service vault --ignore-not-found
 
+.PHONY: kind/container-ip-address
+kind/container-ip-address:
+	@echo $(kind_container_ip_address)
+
 .PHONY: kind/cluster-name
 kind/cluster-name:
 	@echo $(KIND_CLUSTER_NAME)
@@ -48,45 +54,3 @@ kind/cluster-name:
 .PHONY: kind/kubeconfig
 kind/kubeconfig:
 	@echo $(KUBECONFIG)
-
-# vault_service_name := vault
-# vault_service_namespace := default
-# vault_server := http://$(vault_service_name).$(vault_service_namespace):8200
-
-# .PHONY: vault-service/up
-# vault-service/up: external_name=$(vault_container_name)
-# vault-service/up:
-# 	kubectl create service externalname $(vault_service_name) -n $(vault_service_namespace) --external-name=$(external_name) --dry-run=client -o yaml \
-# 	| kubectl apply -f -
-
-# .PHONY: vault-service/down
-# vault-service/down:
-# 	kubectl delete service $(vault_service_name) -n $(vault_service_namespace) --ignore-not-found
-
-# .PHONY: olm/up
-# olm/up:
-# 	if ! operator-sdk olm status > /dev/null; then operator-sdk olm install; fi
-
-# .PHONY: olm/down
-# olm/down:
-# 	if operator-sdk olm status > /dev/null; then operator-sdk olm uninstall; fi
-
-# cert_manager_manifst := https://operatorhub.io/install/cert-manager.yaml
-
-# .PHONY: cert-manager/up
-# cert-manager/up:
-# 	kubectl apply -f $(cert_manager_manifst)
-
-# .PHONY: cert-manager/down
-# cert-manager/down:
-# 	kubectl delete -f $(cert_manager_manifst) --force=true --grace-period=0 --ignore-not-found=true
-
-# external_secrets_manifest := https://operatorhub.io/install/external-secrets-operator.yaml
-
-# .PHONY: external-secrets/up
-# external-secrets/up:
-# 	kubectl apply -f $(external_secrets_manifest)
-
-# .PHONY: external-secrets/down
-# external-secrets/down:
-# 	kubectl delete -f $(external_secrets_manifest) --force=true --grace-period=0 --ignore-not-found=true

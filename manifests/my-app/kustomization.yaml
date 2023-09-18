@@ -1,0 +1,8 @@
+commonLabels:
+  app.kubernetes.io/name: my-app
+
+resources:
+  - my-app-basic-auth.es.yaml
+  - my-app.deploy.yaml
+  - my-app.ing.yaml
+  - my-app.svc.yaml

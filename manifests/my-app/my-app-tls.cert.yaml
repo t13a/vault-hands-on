@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: my-app-tls
+spec:
+  secretName: my-app-tls
+  commonName: app.my.example
+  dnsNames:
+    - app.my.example
+  issuerRef:
+    name: my-int-ca
+    kind: Issuer
+    group: cert-manager.io

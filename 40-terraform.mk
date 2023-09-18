@@ -7,7 +7,7 @@ terraform/up: \
 
 .PHONY: terraform/down
 terraform/down: \
-	terraform/destroy \
+	terraform/clean-tfstate \
 	terraform/clean-tfvars
 
 .PHONY: terraform/init
@@ -29,6 +29,10 @@ terraform/build-tfvars:
 		--arg vault_address '$(vault_addr)' \
 		--arg vault_token '$(vault_token)' \
 		'$$ARGS.named' > $(tfvars_json)
+
+.PHONY: terraform/clean-tfstate
+terraform/clean-tfstate:
+	rm -f terraform.tfstate terraform.tfstate.*
 
 .PHONY: terraform/clean-tfvars
 terraform/clean-tfvars:

@@ -1,6 +1,7 @@
 with (import <nixpkgs> {});
 mkShell {
   buildInputs = [
+    curl
     gnumake
     jq
     kind

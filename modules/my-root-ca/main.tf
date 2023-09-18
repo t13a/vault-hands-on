@@ -13,8 +13,10 @@ resource "tls_private_key" "this" {
 resource "tls_self_signed_cert" "this" {
   allowed_uses = [
     "cert_signing",
+    "client_auth",
     "crl_signing",
-    "ocsp_signing"
+    "ocsp_signing",
+    "server_auth"
   ]
   private_key_pem       = tls_private_key.this.private_key_pem
   validity_period_hours = var.ttl_seconds / 60 / 60

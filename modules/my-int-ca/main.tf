@@ -15,22 +15,24 @@ resource "vault_mount" "this" {
 
 # XXX: work around for missing private key when `type = "internal"` is specified in `vault_pki_secret_backend_intermediate_cert_request`
 resource "vault_pki_secret_backend_key" "this" {
-  backend     = vault_mount.this.path
-  type = "internal"
+  backend = vault_mount.this.path
+  type    = "internal"
 }
 
 resource "vault_pki_secret_backend_intermediate_cert_request" "this" {
   backend     = vault_mount.this.path
   type        = "existing"
   common_name = var.common_name
-  key_ref = vault_pki_secret_backend_key.this.key_id
+  key_ref     = vault_pki_secret_backend_key.this.key_id
 }
 
 resource "tls_locally_signed_cert" "this" {
   allowed_uses = [
     "cert_signing",
+    "client_auth",
     "crl_signing",
-    "ocsp_signing"
+    "ocsp_signing",
+    "server_auth"
   ]
   ca_cert_pem           = var.root_ca_cert_pem
   ca_private_key_pem    = var.root_ca_private_key_pem
@@ -55,4 +57,8 @@ resource "vault_pki_secret_backend_role" "domain" {
   allowed_domains  = [var.domain_name]
   allow_subdomains = true
   server_flag      = true
+  key_usage        = ["DigitalSignature", "KeyEncipherment"]
+  ext_key_usage    = ["ServerAuth"]
+  no_store         = true
+  require_cn       = false
 }

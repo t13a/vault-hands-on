@@ -28,7 +28,7 @@ module "my_root_ca" {
 module "my_int_ca" {
   source                  = "./modules/my-int-ca"
   common_name             = "My Intermediate CA"
-  domain_name             = "example.com"
+  domain_name             = "my.example"
   issuer_name             = "my-int-ca"
   max_lease_ttl_seconds   = 60 * 60 * 24 * 90 # 90 days
   root_ca_cert_pem        = module.my_root_ca.cert_pem
@@ -37,7 +37,7 @@ module "my_int_ca" {
 }
 
 module "my_int_ca_cert_manager" {
-  source = "./modules/my-int-ca-cert-manager"
+  source              = "./modules/my-int-ca-cert-manager"
   vault_approle_path  = module.vault.approle_path
   vault_pki_path      = module.my_int_ca.vault_pki_path
   vault_pki_role_name = module.my_int_ca.vault_pki_role_name
@@ -45,13 +45,20 @@ module "my_int_ca_cert_manager" {
 }
 
 module "my_secrets" {
-  source = "./modules/my-secrets"
+  source        = "./modules/my-secrets"
   vault_kv_path = "my-secrets"
 }
 
 module "my_secrets_external_secrets" {
-  source = "./modules/my-secrets-external-secrets"
+  source             = "./modules/my-secrets-external-secrets"
   vault_approle_path = module.vault.approle_path
   vault_kv_path      = module.my_secrets.vault_kv_path
   vault_server       = var.vault_server
+}
+
+module "my_app_secrets" {
+  source            = "./modules/my-app-secrets"
+  htpasswd_password = "12345"
+  htpasswd_username = "alice"
+  vault_kv_path     = module.my_secrets.vault_kv_path
 }

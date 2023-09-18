@@ -1,6 +1,7 @@
 helm_releases := \
 	cert-manager \
-	external-secrets
+	external-secrets \
+	ingress-nginx
 
 .PHONY: helm/up
 helm/up: $(addsuffix /install,$(helm_releases))
@@ -22,3 +23,11 @@ $(1)/uninstall:
 endef
 $(eval $(call helm_release_rules,cert-manager,cert-manager,cert-manager,https://charts.jetstack.io,--atomic --create-namespace --set installCRDs=true --set startupapicheck.enabled=false))
 $(eval $(call helm_release_rules,external-secrets,external-secrets,external-secrets,https://charts.external-secrets.io,--atomic --create-namespace --set installCRDs=true))
+
+$(eval $(call helm_release_rules,ingress-nginx,ingress-nginx,ingress-nginx,https://kubernetes.github.io/ingress-nginx,$$(ingress_nginx_install_opts)))
+ingress_nginx_install_opts := \
+	--atomic \
+	--create-namespace \
+	--set-json controller.extraArgs='{"watch-ingress-without-class":"true","publish-status-address":"localhost"}' \
+	--set controller.hostPort.enabled=true \
+	--set controller.service.external.enabled=false

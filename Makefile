@@ -9,7 +9,14 @@ up: \
 	vault/up \
 	kind/up \
 	helm/up \
-	terraform/up
+	terraform/up \
+	my-app/up
+	@echo
+	@echo Setup completed successfully. You can now login to Vault.
+	@echo
+	@echo \> Address: $(vault_addr)
+	@echo \> Token: $(vault_token)
+	@echo
 
 .PHONY: down
 down: \
