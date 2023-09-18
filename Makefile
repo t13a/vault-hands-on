@@ -13,6 +13,7 @@ up: \
 
 .PHONY: down
 down: \
+	terraform/down \
 	kind/down \
 	vault/down
 
