@@ -16,9 +16,17 @@ down: \
 	kind/down \
 	vault/down
 
-.PHONY: exec
-exec: EXEC_CMD_ARGS = bash
-exec: export VAULT_ADDR = $(vault_addr)
-exec: export VAULT_TOKEN = $(vault_token)
-exec:
-	exec $(EXEC_CMD_ARGS)
+env_json = jq -n \
+		--arg KIND_CLUSTER_NAME '$(KIND_CLUSTER_NAME)' \
+		--arg KUBECONFIG '$(KUBECONFIG)' \
+		--arg VAULT_ADDR '$(vault_addr)' \
+		--arg VAULT_TOKEN '$(vault_token)' \
+		'$$ARGS.named'
+
+.PHONY: export
+export:
+	@$(env_json) | jq -r 'to_entries|map("\(.key)=\(.value|@sh)")|"export \(join(" "))"'
+
+.PHONY: unset
+unset:
+	@$(env_json) | jq -r 'to_entries|map(.key)|"unset \(join(" "))"'
